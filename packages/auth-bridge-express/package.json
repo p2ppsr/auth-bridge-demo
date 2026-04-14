@@ -1,0 +1,62 @@
+{
+  "name": "@bsv/auth-bridge-express",
+  "version": "0.1.0",
+  "description": "Bridge traditional authentication (Google, email) with BRC-100 self-sovereign identity",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsv-blockchain/auth-bridge-express.git"
+  },
+  "type": "module",
+  "main": "dist/cjs/mod.js",
+  "module": "dist/esm/mod.js",
+  "types": "dist/types/mod.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "mod.ts",
+    "LICENSE.txt"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/mod.d.ts",
+      "import": "./dist/esm/mod.js",
+      "require": "./dist/cjs/mod.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b && tsconfig-to-dual-package tsconfig.cjs.json",
+    "dev": "tsc -b -w",
+    "test": "npm run build && jest",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "BSV",
+    "Blockchain",
+    "Authentication",
+    "OAuth",
+    "BRC-100",
+    "Express",
+    "Middleware"
+  ],
+  "author": "BSV Blockchain Association",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "dependencies": {
+    "@bsv/sdk": "^2.0.0",
+    "@bsv/auth-express-middleware": "^2.0.0",
+    "@bsv/wallet-toolbox": "^2.1.0",
+    "express": "^5.1.0",
+    "knex": "^3.1.0",
+    "better-sqlite3": "^11.0.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "tsconfig-to-dual-package": "^1.2.0",
+    "typescript": "^5.2.2"
+  }
+}
