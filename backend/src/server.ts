@@ -13,6 +13,7 @@ import { PrivateKey } from '@bsv/sdk'
 
 const PORT = Number(process.env.PORT ?? 3001)
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
+const AUTH_BASE_URL = process.env.AUTH_BASE_URL ?? `http://localhost:${PORT}/auth`
 
 async function main() {
   const app = express()
@@ -109,7 +110,7 @@ async function main() {
     allowBRC100: true,
 
     jwtSecret: process.env.AUTH_BRIDGE_JWT_SECRET,
-    baseUrl: `http://localhost:${PORT}/auth`,
+    baseUrl: AUTH_BASE_URL,
 
     logger: console
   })
@@ -146,6 +147,7 @@ async function main() {
     console.log(`\nAuth Bridge Example Backend`)
     console.log(`  Server:   http://localhost:${PORT}`)
     console.log(`  Frontend: ${FRONTEND_URL}`)
+    console.log(`  Auth URL: ${AUTH_BASE_URL}`)
     console.log(`  Health:   http://localhost:${PORT}/health`)
     console.log(`  Google:   ${process.env.GOOGLE_CLIENT_ID ? 'enabled' : 'disabled (set GOOGLE_CLIENT_ID)'}`)
     console.log(`  Email:    enabled (magic links logged to console)`)

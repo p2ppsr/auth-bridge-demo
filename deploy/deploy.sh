@@ -77,10 +77,10 @@ FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SERVICE" --region="$REGIO
 
 # Update backend FRONTEND_URL for CORS
 echo
-echo "▶ Updating backend CORS..."
+echo "▶ Updating backend CORS and auth base URL..."
 gcloud run services update "$BACKEND_SERVICE" \
   --region="$REGION" \
-  --update-env-vars="FRONTEND_URL=${FRONTEND_URL}"
+  --update-env-vars="FRONTEND_URL=${FRONTEND_URL},AUTH_BASE_URL=${BACKEND_URL}/auth"
 
 echo
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
