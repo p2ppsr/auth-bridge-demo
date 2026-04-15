@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "module": "NodeNext",
+    "target": "esnext",
+    "moduleResolution": "NodeNext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "rootDir": "./",
+    "baseUrl": "./",
+    "strict": false,
+    "isolatedModules": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  },
+  "files": ["mod.ts"],
+  "include": ["src"],
+  "exclude": ["dist", "*/**/__tests"]
+}

@@ -1,0 +1,104 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGION: us-central1
+  BACKEND_SERVICE: auth-bridge-backend
+  FRONTEND_SERVICE: auth-bridge-frontend
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      # ── Backend ─────────────────────────────────────────────────
+      - name: Build & push backend
+        run: |
+          IMAGE="gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_SERVICE }}:${{ github.sha }}"
+          docker build -t "$IMAGE" -f backend/Dockerfile .
+          docker push "$IMAGE"
+          docker tag "$IMAGE" "gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_SERVICE }}:latest"
+          docker push "gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_SERVICE }}:latest"
+
+      - name: Deploy backend to Cloud Run
+        id: deploy-backend
+        run: |
+          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
+            --image="gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.BACKEND_SERVICE }}:${{ github.sha }}" \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --set-env-vars="^@^DB_HOST=${{ secrets.DB_HOST }}@DB_PORT=3306@DB_USER=${{ secrets.DB_USER }}@DB_PASSWORD=${{ secrets.DB_PASSWORD }}@DB_NAME=${{ secrets.DB_NAME }}@BSV_CHAIN=main@STORAGE_URL=https://storage.babbage.systems@NODE_ENV=production@SERVER_WALLET_KEY=${{ secrets.SERVER_WALLET_KEY }}@AUTH_BRIDGE_KEY=${{ secrets.AUTH_BRIDGE_KEY }}@AUTH_BRIDGE_JWT_SECRET=${{ secrets.AUTH_BRIDGE_JWT_SECRET }}@GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}@GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}@FUNDING_WALLET_KEY=${{ secrets.FUNDING_WALLET_KEY }}@FUND_AMOUNT_SATS=5000"
+          BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} --region=${{ env.REGION }} --format='value(status.url)')
+          echo "backend_url=$BACKEND_URL" >> "$GITHUB_OUTPUT"
+          echo "Backend: $BACKEND_URL"
+
+      # ── Frontend ────────────────────────────────────────────────
+      - name: Build & push frontend
+        run: |
+          IMAGE="gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_SERVICE }}:${{ github.sha }}"
+          docker build \
+            --build-arg VITE_GOOGLE_CLIENT_ID="${{ secrets.VITE_GOOGLE_CLIENT_ID }}" \
+            -t "$IMAGE" -f frontend/Dockerfile .
+          docker push "$IMAGE"
+          docker tag "$IMAGE" "gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_SERVICE }}:latest"
+          docker push "gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_SERVICE }}:latest"
+
+      - name: Deploy frontend to Cloud Run
+        id: deploy-frontend
+        run: |
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
+            --image="gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.FRONTEND_SERVICE }}:${{ github.sha }}" \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --set-env-vars="BACKEND_URL=${{ steps.deploy-backend.outputs.backend_url }}"
+          FRONTEND_URL=$(gcloud run services describe ${{ env.FRONTEND_SERVICE }} --region=${{ env.REGION }} --format='value(status.url)')
+          echo "frontend_url=$FRONTEND_URL" >> "$GITHUB_OUTPUT"
+          echo "Frontend: $FRONTEND_URL"
+
+      # ── Update CORS on backend ──────────────────────────────────
+      - name: Update backend CORS
+        run: |
+          gcloud run services update ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --update-env-vars="FRONTEND_URL=${{ steps.deploy-frontend.outputs.frontend_url }}"
+
+      - name: Deployment summary
+        run: |
+          echo "### Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ steps.deploy-frontend.outputs.frontend_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend  | ${{ steps.deploy-backend.outputs.backend_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note**: Ensure the frontend URL is registered in your Google OAuth client's authorized origins and redirect URIs." >> $GITHUB_STEP_SUMMARY

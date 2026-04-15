@@ -1,0 +1,64 @@
+{
+  "name": "@bsv/auth-bridge-react",
+  "version": "0.1.0",
+  "description": "React components for BSV Auth Bridge — traditional auth with BRC-100 migration path",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsv-blockchain/auth-bridge-react.git"
+  },
+  "type": "module",
+  "main": "dist/cjs/mod.js",
+  "module": "dist/esm/mod.js",
+  "types": "dist/types/mod.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "mod.ts",
+    "LICENSE.txt"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/mod.d.ts",
+      "import": "./dist/esm/mod.js",
+      "require": "./dist/cjs/mod.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b && tsconfig-to-dual-package tsconfig.cjs.json",
+    "dev": "tsc -b -w",
+    "test": "npm run build && jest",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "BSV",
+    "Blockchain",
+    "Authentication",
+    "React",
+    "BRC-100",
+    "OAuth"
+  ],
+  "author": "BSV Blockchain Association",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "@bsv/sdk": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@bsv/sdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@bsv/sdk": "^2.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "ts-jest": "^29.1.1",
+    "tsconfig-to-dual-package": "^1.2.0",
+    "typescript": "^5.2.2"
+  }
+}
