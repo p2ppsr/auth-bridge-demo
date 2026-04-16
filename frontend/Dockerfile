@@ -19,6 +19,7 @@ COPY frontend/tsconfig.json ./
 COPY frontend/vite.config.ts ./
 COPY frontend/index.html ./
 COPY frontend/src ./src
+COPY frontend/public ./public
 
 RUN npm install --ignore-scripts
 
