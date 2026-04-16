@@ -24,7 +24,8 @@ interface Task {
 
 // ─── App ────────────────────────────────────────────────────────────
 export function App() {
-  const providers: ('google' | 'email' | 'brc100')[] = ['email', 'brc100']
+  // TODO: re-enable 'email' once SendGrid is integrated for magic-link delivery
+  const providers: ('google' | 'email' | 'brc100')[] = ['brc100']
   if (GOOGLE_CLIENT_ID) providers.unshift('google')
 
   return (
@@ -97,7 +98,22 @@ function Landing() {
           <AuthBridgeLogin />
         </Modal>
       )}
+
+      <Footer />
     </div>
+  )
+}
+
+function Footer() {
+  return (
+    <footer style={{
+      borderTop: '1px solid #eee', marginTop: 80, padding: '24px',
+      textAlign: 'center', fontSize: 13, color: '#888'
+    }}>
+      <a href="/privacy.html" style={{ color: '#555', textDecoration: 'none', margin: '0 10px' }}>Privacy Policy</a>
+      <span style={{ color: '#ccc' }}>·</span>
+      <a href="/terms.html" style={{ color: '#555', textDecoration: 'none', margin: '0 10px' }}>Terms of Service</a>
+    </footer>
   )
 }
 
