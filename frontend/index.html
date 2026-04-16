@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auth Bridge Example</title>
+    <title>Tasks</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
@@ -12,10 +12,29 @@
         color: #1e293b;
         min-height: 100vh;
       }
+      #legal-footer {
+        border-top: 1px solid #eee;
+        padding: 24px;
+        text-align: center;
+        font-size: 13px;
+        color: #888;
+        background: #fff;
+      }
+      #legal-footer a {
+        color: #555;
+        text-decoration: none;
+        margin: 0 10px;
+      }
+      #legal-footer a:hover { color: #111; }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    <footer id="legal-footer">
+      <a href="/privacy.html">Privacy Policy</a>
+      <span style="color:#ccc">·</span>
+      <a href="/terms.html">Terms of Service</a>
+    </footer>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
