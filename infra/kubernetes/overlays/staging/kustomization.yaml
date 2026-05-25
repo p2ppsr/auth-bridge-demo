@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: auth-bridge-staging
+resources:
+  - ../../base
+configMapGenerator:
+  - name: auth-bridge-config
+    behavior: replace
+    literals:
+      - NODE_ENV=production
+      - PORT=8080
+      - BSV_CHAIN=test
+      - STORAGE_URL=http://wallet-storage.wallet-storage-staging.svc.cluster.local:8080
+      - FRONTEND_URL=https://staging-auth-bridge.babbage.systems
+      - AUTH_BASE_URL=https://staging-auth-bridge-api.babbage.systems/auth
+      - BACKEND_HOST=auth-bridge-backend
+      - BACKEND_PORT=8080
+images:
+  - name: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-backend
+    newName: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-backend
+    newTag: latest
+  - name: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-frontend
+    newName: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-frontend
+    newTag: latest
+patches:
+  - target:
+      kind: Certificate
+      name: auth-bridge-frontend-tls
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: staging-auth-bridge.babbage.systems
+  - target:
+      kind: Certificate
+      name: auth-bridge-backend-tls
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: staging-auth-bridge-api.babbage.systems

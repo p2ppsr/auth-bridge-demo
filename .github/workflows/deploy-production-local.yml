@@ -1,0 +1,52 @@
+name: Deploy Production Local Kubernetes
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Validated source commit SHA to deploy
+        required: true
+      wait_for_cert:
+        description: Wait for certificate readiness
+        required: false
+        default: "true"
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, auth-bridge-local-deploy, evans-creek-local-deploy, linux-amd64, docker, kubectl, local-registry]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout deploy SHA
+        run: git checkout "${{ inputs.source_sha }}"
+      - name: Verify deploy SHA is on main
+        run: git merge-base --is-ancestor "${{ inputs.source_sha }}" origin/main
+      - name: Build and publish images
+        id: build
+        env:
+          ENVIRONMENT: production
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          REGISTRY_PUSH: ${{ vars.LOCAL_REGISTRY_PUSH }}
+          REGISTRY_PULL: ${{ vars.LOCAL_REGISTRY_PULL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        run: scripts/k8s/build-local-image.sh
+      - name: Deploy production
+        env:
+          ENVIRONMENT: production
+          IMAGE_TAG: ${{ steps.build.outputs.image_tag }}
+          REGISTRY_PULL: ${{ vars.LOCAL_REGISTRY_PULL }}
+          KUBECTL: ${{ vars.LOCAL_KUBECTL }}
+          WAIT_FOR_CERT: ${{ inputs.wait_for_cert }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          SERVER_WALLET_KEY: ${{ secrets.SERVER_WALLET_KEY }}
+          AUTH_BRIDGE_KEY: ${{ secrets.AUTH_BRIDGE_KEY }}
+          AUTH_BRIDGE_JWT_SECRET: ${{ secrets.AUTH_BRIDGE_JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FUNDING_WALLET_KEY: ${{ secrets.FUNDING_WALLET_KEY }}
+          FUND_AMOUNT_SATS: ${{ secrets.FUND_AMOUNT_SATS }}
+        run: scripts/k8s/deploy-local.sh

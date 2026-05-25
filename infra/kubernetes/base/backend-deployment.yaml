@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-bridge-backend
+  labels:
+    app.kubernetes.io/name: auth-bridge-backend
+    app.kubernetes.io/part-of: auth-bridge
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: auth-bridge-backend
+      app.kubernetes.io/part-of: auth-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: auth-bridge-backend
+        app.kubernetes.io/part-of: auth-bridge
+    spec:
+      containers:
+        - name: auth-bridge-backend
+          image: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: auth-bridge-config
+            - secretRef:
+                name: auth-bridge-secrets
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi

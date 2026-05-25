@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-bridge-frontend
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-nginx
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - staging-auth-bridge.babbage.systems
+      secretName: auth-bridge-frontend-tls
+  rules:
+    - host: staging-auth-bridge.babbage.systems
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-bridge-frontend
+                port:
+                  number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-bridge-backend
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-nginx
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - staging-auth-bridge-api.babbage.systems
+      secretName: auth-bridge-backend-tls
+  rules:
+    - host: staging-auth-bridge-api.babbage.systems
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-bridge-backend
+                port:
+                  number: 8080

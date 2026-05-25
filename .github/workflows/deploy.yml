@@ -1,8 +1,6 @@
-name: Deploy to Cloud Run
+name: Retired Cloud Run Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:

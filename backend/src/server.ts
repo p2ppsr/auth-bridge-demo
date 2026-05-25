@@ -8,15 +8,61 @@ dotenv.config({ path: resolve(__dirname, '../../.env') })
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import knex from 'knex'
 import { createAuthBridge } from '@bsv/auth-bridge-express'
 import { PrivateKey } from '@bsv/sdk'
 
 const PORT = Number(process.env.PORT ?? 3001)
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173'
 const AUTH_BASE_URL = process.env.AUTH_BASE_URL ?? `http://localhost:${PORT}/auth`
+const BSV_CHAIN = (process.env.BSV_CHAIN as 'main' | 'test') ?? 'test'
+const DB_NAME = process.env.DB_NAME ?? 'auth_bridge'
+
+const knexConfig = {
+  client: 'mysql2',
+  connection: process.env.DB_SOCKET_PATH
+    ? {
+        socketPath: process.env.DB_SOCKET_PATH,
+        user: process.env.DB_USER ?? 'authbridge',
+        password: process.env.DB_PASSWORD ?? 'authbridge',
+        database: DB_NAME
+      }
+    : {
+        host: process.env.DB_HOST ?? '127.0.0.1',
+        port: Number(process.env.DB_PORT ?? 3306),
+        user: process.env.DB_USER ?? 'authbridge',
+        password: process.env.DB_PASSWORD ?? 'authbridge',
+        database: DB_NAME
+      }
+}
+
+async function checkDatabase() {
+  const db = knex(knexConfig)
+  try {
+    await db.raw('SELECT 1')
+    return 'ok'
+  } catch (err) {
+    console.error('Database health check failed:', err)
+    return 'error'
+  } finally {
+    await db.destroy()
+  }
+}
 
 async function main() {
   const app = express()
+
+  app.get('/healthz', async (_req, res) => {
+    const database = await checkDatabase()
+    res.status(database === 'ok' ? 200 : 503).json({
+      ok: database === 'ok',
+      service: 'auth-bridge-backend',
+      chain: BSV_CHAIN,
+      frontendUrl: FRONTEND_URL,
+      authBaseUrl: AUTH_BASE_URL,
+      database
+    })
+  })
 
   app.use(cors({
     origin: FRONTEND_URL,
@@ -41,7 +87,7 @@ async function main() {
     const { SetupClient } = await import('@bsv/wallet-toolbox')
     const storageUrl = process.env.STORAGE_URL ?? 'https://staging-storage.babbage.systems'
     serverWallet = await SetupClient.createWalletClientNoEnv({
-      chain: (process.env.BSV_CHAIN as 'main' | 'test') ?? 'test',
+      chain: BSV_CHAIN,
       rootKeyHex: serverKeyHex,
       storageUrl
     })
@@ -73,26 +119,8 @@ async function main() {
   // ── Auth Bridge ─────────────────────────────────────────────────────
   const { router: authRouter, sessionMiddleware, brc100Middleware } = await createAuthBridge({
     serverWallet,
-    chain: (process.env.BSV_CHAIN as 'main' | 'test') ?? 'test',
-
-    knexConfig: {
-      client: 'mysql2',
-      connection: process.env.DB_SOCKET_PATH
-        ? {
-            // Cloud SQL via Unix socket (Cloud Run with --add-cloudsql-instances)
-            socketPath: process.env.DB_SOCKET_PATH,
-            user: process.env.DB_USER ?? 'authbridge',
-            password: process.env.DB_PASSWORD ?? 'authbridge',
-            database: process.env.DB_NAME ?? 'auth_bridge'
-          }
-        : {
-            host: process.env.DB_HOST ?? '127.0.0.1',
-            port: Number(process.env.DB_PORT ?? 3306),
-            user: process.env.DB_USER ?? 'authbridge',
-            password: process.env.DB_PASSWORD ?? 'authbridge',
-            database: process.env.DB_NAME ?? 'auth_bridge'
-          }
-    },
+    chain: BSV_CHAIN,
+    knexConfig,
 
     storageUrl: process.env.STORAGE_URL ?? 'https://staging-storage.babbage.systems',
 

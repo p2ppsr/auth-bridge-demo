@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-bridge-frontend-tls
+spec:
+  secretName: auth-bridge-frontend-tls
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-nginx
+  dnsNames:
+    - staging-auth-bridge.babbage.systems
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-bridge-backend-tls
+spec:
+  secretName: auth-bridge-backend-tls
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-nginx
+  dnsNames:
+    - staging-auth-bridge-api.babbage.systems

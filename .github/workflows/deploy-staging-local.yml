@@ -1,0 +1,51 @@
+name: Deploy Staging Local Kubernetes
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Source commit SHA to deploy
+        required: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: [self-hosted, auth-bridge-local-deploy, evans-creek-local-deploy, linux-amd64, docker, kubectl, local-registry]
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.event.workflow_run.head_sha }}
+      - name: Build and publish images
+        id: build
+        env:
+          ENVIRONMENT: staging
+          SOURCE_SHA: ${{ inputs.source_sha || github.event.workflow_run.head_sha }}
+          REGISTRY_PUSH: ${{ vars.LOCAL_REGISTRY_PUSH }}
+          REGISTRY_PULL: ${{ vars.LOCAL_REGISTRY_PULL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        run: scripts/k8s/build-local-image.sh
+      - name: Deploy staging
+        env:
+          ENVIRONMENT: staging
+          IMAGE_TAG: ${{ steps.build.outputs.image_tag }}
+          REGISTRY_PULL: ${{ vars.LOCAL_REGISTRY_PULL }}
+          KUBECTL: ${{ vars.LOCAL_KUBECTL }}
+          WAIT_FOR_CERT: "false"
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          SERVER_WALLET_KEY: ${{ secrets.SERVER_WALLET_KEY }}
+          AUTH_BRIDGE_KEY: ${{ secrets.AUTH_BRIDGE_KEY }}
+          AUTH_BRIDGE_JWT_SECRET: ${{ secrets.AUTH_BRIDGE_JWT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FUNDING_WALLET_KEY: ${{ secrets.FUNDING_WALLET_KEY }}
+          FUND_AMOUNT_SATS: ${{ secrets.FUND_AMOUNT_SATS }}
+        run: scripts/k8s/deploy-local.sh
