@@ -7,13 +7,13 @@ RUN apt-get update \
 
 COPY packages/auth-bridge-express/package.json packages/auth-bridge-express/package-lock.json ./packages/auth-bridge-express/
 WORKDIR /build/packages/auth-bridge-express
-RUN npm ci --ignore-scripts
+RUN npm ci
 COPY packages/auth-bridge-express ./
 RUN npm run build
 
 WORKDIR /build/backend
 COPY backend/package.json backend/package-lock.json backend/tsconfig.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 COPY backend/src ./src
 RUN npm run build && npm prune --omit=dev
 
