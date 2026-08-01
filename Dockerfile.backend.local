@@ -5,10 +5,9 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
 
-COPY packages/auth-bridge-express/package.json packages/auth-bridge-express/package-lock.json ./packages/auth-bridge-express/
+COPY packages/auth-bridge-express ./packages/auth-bridge-express
 WORKDIR /build/packages/auth-bridge-express
 RUN npm ci
-COPY packages/auth-bridge-express ./
 RUN npm run build
 
 WORKDIR /build/backend
