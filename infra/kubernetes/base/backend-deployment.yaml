@@ -6,9 +6,12 @@ metadata:
     app.kubernetes.io/name: auth-bridge-backend
     app.kubernetes.io/part-of: auth-bridge
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: auth-bridge-backend
@@ -19,6 +22,15 @@ spec:
         app.kubernetes.io/name: auth-bridge-backend
         app.kubernetes.io/part-of: auth-bridge
     spec:
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: auth-bridge-backend
+              app.kubernetes.io/part-of: auth-bridge
       containers:
         - name: auth-bridge-backend
           image: registry.cars-operator-system.svc.cluster.local:5000/p2ppsr/auth-bridge-backend:latest
@@ -43,6 +55,10 @@ spec:
               port: http
             failureThreshold: 30
             periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: [sh, -c, sleep 10]
           resources:
             requests:
               cpu: 250m
