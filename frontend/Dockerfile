@@ -1,7 +1,7 @@
 # Frontend Dockerfile for auth-bridge-example
 # Build context: repo root (auth-bridge-example/)
 
-FROM node:20-slim AS builder
+FROM node:22.23.4-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d AS builder
 WORKDIR /build
 
 # Copy bundled packages
